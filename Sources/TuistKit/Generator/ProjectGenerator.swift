@@ -7,6 +7,7 @@ protocol ProjectGenerating: AnyObject {
     func generate(project: Project,
                   options: GenerationOptions,
                   graph: Graphing,
+                  configurations: ConfigurationList,
                   sourceRootPath: AbsolutePath?) throws -> GeneratedProject
 }
 
@@ -61,6 +62,7 @@ final class ProjectGenerator: ProjectGenerating {
     func generate(project: Project,
                   options: GenerationOptions,
                   graph: Graphing,
+                  configurations: ConfigurationList,
                   sourceRootPath: AbsolutePath? = nil) throws -> GeneratedProject {
         printer.print("Generating project \(project.name)")
 
@@ -88,6 +90,7 @@ final class ProjectGenerator: ProjectGenerating {
         let configurationList = try configGenerator.generateProjectConfig(project: project,
                                                                           pbxproj: pbxproj,
                                                                           fileElements: fileElements,
+                                                                          configurations: configurations,
                                                                           options: options)
 
         let pbxProject = try generatePbxproject(project: project,
@@ -149,7 +152,8 @@ final class ProjectGenerator: ProjectGenerating {
                                                     groups: groups,
                                                     sourceRootPath: sourceRootPath,
                                                     options: options,
-                                                    resourceLocator: resourceLocator)
+                                                    resourceLocator: resourceLocator,
+                                                    configurations: configurations)
 
         var nativeTargets: [String: PBXNativeTarget] = [:]
         try project.targets.forEach { target in
@@ -163,7 +167,8 @@ final class ProjectGenerator: ProjectGenerating {
                                                                   options: options,
                                                                   graph: graph,
                                                                   resourceLocator: resourceLocator,
-                                                                  system: system)
+                                                                  system: system,
+                                                                  configurations: configurations)
             nativeTargets[target.name] = nativeTarget
         }
 
