@@ -91,6 +91,7 @@ final class ProjectGenerator: ProjectGenerating {
                                                                           pbxproj: pbxproj,
                                                                           fileElements: fileElements,
                                                                           configurations: configurations,
+                                                                          isRoot: graph.rootProject == project,
                                                                           options: options)
 
         let pbxProject = try generatePbxproject(project: project,
