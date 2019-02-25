@@ -139,21 +139,21 @@ extension TuistKit.Target {
 
 extension TuistKit.Settings {
     static func from(json: JSON, path: AbsolutePath, fileHandler: FileHandling) throws -> TuistKit.Settings {
-        let base: [String: String] = try json.get("base")
-        let debugJSON: JSON? = try? json.get("debug")
-        let debug = try debugJSON.flatMap { try TuistKit.Configuration.from(json: $0, path: path, fileHandler: fileHandler) }
-        let releaseJSON: JSON? = try? json.get("release")
-        let release = try releaseJSON.flatMap { try TuistKit.Configuration.from(json: $0, path: path, fileHandler: fileHandler) }
-        return Settings(base: base, debug: debug, release: release)
+        return .init(
+            base: try json.get("base"),
+            configurations: try json.getArray("configurations").compactMap({ try TuistKit.Configuration.from(json: $0, path: path, fileHandler: fileHandler) })
+        )
     }
 }
 
 extension TuistKit.Configuration {
-    static func from(json: JSON, path: AbsolutePath, fileHandler _: FileHandling) throws -> TuistKit.Configuration {
-        let settings: [String: String] = try json.get("settings")
-        let xcconfigString: String? = json.get("xcconfig")
-        let xcconfig = xcconfigString.flatMap({ path.appending(RelativePath($0)) })
-        return Configuration(settings: settings, xcconfig: xcconfig)
+    static func from(json: JSON, path: AbsolutePath, fileHandler: FileHandling) throws -> TuistKit.Configuration {
+        return .init(
+            name: try json.get("name"),
+            buildConfiguration: BuildConfiguration(rawValue: try json.get("buildConfiguration")) ?? .debug,
+            settings: try json.get("settings"),
+            xcconfig: json.get("xcconfig").flatMap({ path.appending(RelativePath($0)) })
+        )
     }
 }
 
@@ -290,4 +290,18 @@ extension TuistKit.BuildConfiguration {
         }
         return config
     }
+}
+
+ // MARK: - JSON extension for getting dictionary value from self [String: T].
+
+extension JSON {
+    
+    /// Returns a JSON mappable dictionary for self.
+    fileprivate func getDictionary<T: JSONMappable>() throws -> [String: T] {
+        guard case .dictionary(let value) = self else {
+            throw MapError.typeMismatch(key: "<self>", expected: Dictionary<String, T>.self, json: self)
+        }
+        return try Dictionary(items: value.map({ ($0.0, try T.init(json: $0.1)) }))
+    }
+    
 }
