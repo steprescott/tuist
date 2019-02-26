@@ -31,13 +31,16 @@ final class WorkspaceGeneratorTests: XCTestCase {
                 printer: MockPrinter(),
                 resourceLocator: MockResourceLocator(),
                 projectDirectoryHelper: projectDirectoryHelper,
+                projectGenerator: MockProjectGenerator(),
                 fileHandler: fileHandler
             )
 
             let targetNode = TargetNode(project: project, target: target, dependencies: [])
             let cache = GraphLoaderCache()
+            
             cache.add(targetNode: targetNode)
-
+            cache.add(project: project)
+            
             graph = Graph.test(entryPath: path, cache: cache)
 
         } catch {
