@@ -106,7 +106,8 @@ final class ProjectGenerator: ProjectGenerating {
                                                 fileElements: fileElements,
                                                 sourceRootPath: sourceRootPath,
                                                 options: options,
-                                                graph: graph)
+                                                graph: graph,
+                                                configurations: configurations)
 
         return try write(xcodeprojPath: xcodeprojPath,
                          nativeTargets: nativeTargets,
@@ -146,7 +147,8 @@ final class ProjectGenerator: ProjectGenerating {
                                      fileElements: ProjectFileElements,
                                      sourceRootPath: AbsolutePath,
                                      options: GenerationOptions,
-                                     graph: Graphing) throws -> [String: PBXNativeTarget] {
+                                     graph: Graphing,
+                                     configurations: ConfigurationList) throws -> [String: PBXNativeTarget] {
         try targetGenerator.generateManifestsTarget(project: project,
                                                     pbxproj: pbxproj,
                                                     pbxProject: pbxProject,
