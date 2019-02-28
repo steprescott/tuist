@@ -1,8 +1,9 @@
 import Basic
 import Foundation
 
-/// Generation options.
-class GenerationOptions {
-    /// Initializes the options with its attributes.
-    init() {}
+struct GenerationOptions {
+    var primaryProject: AbsolutePath?
+    public init(primaryProject: AbsolutePath? = nil) {
+        self.primaryProject = primaryProject
+    }
 }

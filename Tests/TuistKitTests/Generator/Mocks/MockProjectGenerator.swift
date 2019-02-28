@@ -5,13 +5,13 @@ import TuistCore
 
 final class MockProjectGenerator: ProjectGenerating {
 
-    var generateStub: ((Project, GenerationOptions, Graphing, ConfigurationList, AbsolutePath?) throws -> GeneratedProject)?
+    var generateStub: ((Project, GenerationOptions, Graphing, ConfigurationList?, AbsolutePath?) throws -> GeneratedProject)?
 
     func generate(project: Project,
                   options: GenerationOptions,
                   graph: Graphing,
-                  configurations: ConfigurationList,
+                  sharedConfigurations: ConfigurationList?,
                   sourceRootPath: AbsolutePath?) throws -> GeneratedProject {
-        return try generateStub?(project, options, graph, configurations, sourceRootPath) ?? GeneratedProject.test()
+        return try generateStub?(project, options, graph, sharedConfigurations, sourceRootPath) ?? GeneratedProject.test()
     }
 }

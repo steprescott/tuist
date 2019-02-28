@@ -1,6 +1,5 @@
 import Basic
 import Foundation
-import ProjectDescription
 import XCTest
 @testable import TuistCoreTesting
 @testable import TuistKit
@@ -105,7 +104,7 @@ final class WorkspaceGeneratorTests: XCTestCase {
 
         XCTAssertTrue(workspace.contains("location = \"group:Workspace.swift\">"))
     }
-
+    
     func readWorkspace(at path: AbsolutePath) throws -> String {
         return try fileHandler.readTextFile(path.appending(component: "test.xcworkspace").appending(component: "contents.xcworkspacedata"))
     }

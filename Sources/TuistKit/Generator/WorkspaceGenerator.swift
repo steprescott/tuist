@@ -5,7 +5,11 @@ import xcodeproj
 
 protocol WorkspaceGenerating: AnyObject {
     @discardableResult
-    func generate(path: AbsolutePath, graph: Graphing, options: GenerationOptions, directory: GenerationDirectory) throws -> AbsolutePath
+    func generate(path: AbsolutePath,
+                  graph: Graphing,
+                  options: GenerationOptions,
+                  sharedConfigurations: ConfigurationList?,
+                  directory: GenerationDirectory) throws -> AbsolutePath
 }
 
 final class WorkspaceGenerator: WorkspaceGenerating {
@@ -55,6 +59,7 @@ final class WorkspaceGenerator: WorkspaceGenerating {
     func generate(path: AbsolutePath,
                   graph: Graphing,
                   options: GenerationOptions,
+                  sharedConfigurations: ConfigurationList? = nil,
                   directory: GenerationDirectory = .manifest) throws -> AbsolutePath {
         let workspaceRootPath = try projectDirectoryHelper.setupDirectory(name: graph.name,
                                                                           path: graph.entryPath,
@@ -64,15 +69,6 @@ final class WorkspaceGenerator: WorkspaceGenerating {
         let workspacePath = workspaceRootPath.appending(component: workspaceName)
         let workspaceData = XCWorkspaceData(children: [])
         let workspace = XCWorkspace(data: workspaceData)
-        
-
-        let configurationList: ConfigurationList
-        
-        if let projectConfigurations = graph.rootProject.settings?.configurations {
-            configurationList = ConfigurationList(projectConfigurations)
-        } else {
-            configurationList = ConfigurationList(BuildConfiguration.allCases.map{ Configuration(name: $0.xcodeValue, buildConfiguration: $0) })
-        }
         
         // MARK: - Manifests
 
@@ -93,7 +89,7 @@ final class WorkspaceGenerator: WorkspaceGenerating {
             let generatedProject = try projectGenerator.generate(project: project,
                                                                  options: options,
                                                                  graph: graph,
-                                                                 configurations: configurationList,
+                                                                 sharedConfigurations: sharedConfigurations,
                                                                  sourceRootPath: sourceRootPath)
 
             let relativePath = generatedProject.path.relative(to: path)

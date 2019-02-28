@@ -9,8 +9,7 @@ protocol ConfigGenerating: AnyObject {
         project: Project,
         pbxproj: PBXProj,
         fileElements: ProjectFileElements,
-        configurations: ConfigurationList,
-        isRoot: Bool,
+        sharedConfigurations: ConfigurationList?,
         options: GenerationOptions
     ) throws -> XCConfigurationList
     
@@ -18,7 +17,7 @@ protocol ConfigGenerating: AnyObject {
         pbxproj: PBXProj,
         options: GenerationOptions,
         resourceLocator: ResourceLocating,
-        configurations: ConfigurationList
+        sharedConfigurations: ConfigurationList?
     ) throws -> XCConfigurationList
 
     func generateTargetConfig(
@@ -26,7 +25,7 @@ protocol ConfigGenerating: AnyObject {
         pbxTarget: PBXTarget,
         pbxproj: PBXProj,
         fileElements: ProjectFileElements,
-        configurations: ConfigurationList,
+        sharedConfigurations: ConfigurationList?,
         options: GenerationOptions,
         sourceRootPath: AbsolutePath
     ) throws
@@ -47,8 +46,7 @@ final class ConfigGenerator: ConfigGenerating {
         project: Project,
         pbxproj: PBXProj,
         fileElements: ProjectFileElements,
-        configurations: ConfigurationList,
-        isRoot: Bool,
+        sharedConfigurations: ConfigurationList?,
         options _: GenerationOptions
     ) throws -> XCConfigurationList {
         /// Configuration list
@@ -56,16 +54,16 @@ final class ConfigGenerator: ConfigGenerating {
         
         pbxproj.add(object: configurationList)
         
+        let configurations = sharedConfigurations ?? configurationListToUse(for: project.settings)
         for configuration in configurations {
             
             try generateProjectSettingsFor(
                 buildConfiguration: configuration.buildConfiguration,
-                configuration: configuration,
+                sharedConfiguration: configuration,
                 project: project,
                 fileElements: fileElements,
                 pbxproj: pbxproj,
-                configurationList: configurationList,
-                isRoot: isRoot
+                configurationList: configurationList
             )
             
         }
@@ -78,7 +76,7 @@ final class ConfigGenerator: ConfigGenerating {
         pbxTarget: PBXTarget,
         pbxproj: PBXProj,
         fileElements: ProjectFileElements,
-        configurations: ConfigurationList,
+        sharedConfigurations: ConfigurationList?,
         options _: GenerationOptions,
         sourceRootPath: AbsolutePath
     ) throws {
@@ -88,6 +86,7 @@ final class ConfigGenerator: ConfigGenerating {
         pbxproj.add(object: configurationList)
         pbxTarget.buildConfigurationList = configurationList
         
+        let configurations = sharedConfigurations ?? configurationListToUse(for: target.settings)
         for configuration in configurations {
             
             try generateTargetSettingsFor(
@@ -108,7 +107,7 @@ final class ConfigGenerator: ConfigGenerating {
         pbxproj: PBXProj,
         options _: GenerationOptions,
         resourceLocator: ResourceLocating = ResourceLocator(),
-        configurations: ConfigurationList
+        sharedConfigurations: ConfigurationList?
     ) throws -> XCConfigurationList {
         
         let configurationList = XCConfigurationList(buildConfigurations: [ ])
@@ -127,6 +126,7 @@ final class ConfigGenerator: ConfigGenerating {
             configuration.buildSettings["OTHER_SWIFT_FLAGS"] = "-swift-version 4 -I \(frameworkParentDirectory.asString)"
         }
         
+        let configurations = sharedConfigurations ?? .default
         for configuration in configurations {
             
             let variant: BuildSettingsProvider.Variant = (configuration.buildConfiguration == .debug) ? .debug : .release
@@ -154,43 +154,31 @@ final class ConfigGenerator: ConfigGenerating {
 
     fileprivate func generateProjectSettingsFor(
         buildConfiguration: BuildConfiguration,
-        configuration: Configuration,
+        sharedConfiguration: Configuration,
         project: Project,
         fileElements: ProjectFileElements,
         pbxproj: PBXProj,
-        configurationList: XCConfigurationList,
-        isRoot: Bool
+        configurationList: XCConfigurationList
     ) throws {
         
         let variant: BuildSettingsProvider.Variant = (buildConfiguration == .debug) ? .debug : .release
         let defaultConfigSettings = BuildSettingsProvider.projectDefault(variant: variant)
         let defaultSettingsAll = BuildSettingsProvider.projectDefault(variant: .all)
-        let variantBuildConfiguration = XCBuildConfiguration(name: configuration.name, baseConfiguration: nil, buildSettings: [:])
+        let variantBuildConfiguration = XCBuildConfiguration(name: sharedConfiguration.name, baseConfiguration: nil, buildSettings: [:])
 
         var settings: [String: Any] = [:]
         extend(buildSettings: &settings, with: defaultSettingsAll)
         extend(buildSettings: &settings, with: project.settings?.base ?? [:])
         extend(buildSettings: &settings, with: defaultConfigSettings)
         
-        let projectBuildSettings: BuildSettings
-        let xcconfig: AbsolutePath?
+        /// If any configurations in the project match the root project configuration name, then merge the settings
+        /// else, If any build configuration types (debug, release) match then select the first one. This is because
+        /// a dependency might only specify Debug and Release where the root project would specify Debug, UAT and Release.
+        let projectConfigurations = project.settings?.configurations
+        let projectConfiguration = projectConfigurations?.first(where: { $0.name == sharedConfiguration.name }) ?? projectConfigurations?.first(where: { $0.buildConfiguration == buildConfiguration })
         
-        if isRoot {
-            projectBuildSettings = configuration.settings
-            xcconfig = configuration.xcconfig
-        } else {
-            
-            /// If any configurations in the project match the root project configuration name, then merge the settings
-            /// else, If any build configuration types (debug, release) match then select the first one. This is because
-            /// a dependency might only specify Debug and Release where the root project would specify Debug, UAT and Release.
-            
-            let projectConfigurations = project.settings?.configurations
-            let projectConfiguration = projectConfigurations?.first(where: { $0.name == configuration.name }) ?? projectConfigurations?.first(where: { $0.buildConfiguration == buildConfiguration })
-            
-            projectBuildSettings = projectConfiguration?.settings ?? [:]
-            xcconfig = projectConfiguration?.xcconfig
-            
-        }
+        let projectBuildSettings = projectConfiguration?.settings ?? [:]
+        let xcconfig = projectConfiguration?.xcconfig
         
         extend(buildSettings: &settings, with: projectBuildSettings)
         
@@ -296,5 +284,20 @@ final class ConfigGenerator: ConfigGenerating {
                 }
             }
         }
+    }
+    
+    private func configurationListToUse(for settings: Settings?) -> ConfigurationList {
+        let configurations = settings?.configurations
+        return configurations.map { ConfigurationList($0) } ?? .default
+    }
+}
+
+private extension ConfigurationList {
+    static var `default`: ConfigurationList {
+        let buildConfigurations = BuildConfiguration.allCases
+        let configurations = buildConfigurations.map{
+            Configuration(name: $0.xcodeValue, buildConfiguration: $0)
+        }
+        return ConfigurationList(configurations)
     }
 }

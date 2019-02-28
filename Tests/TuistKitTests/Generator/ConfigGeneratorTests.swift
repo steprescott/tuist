@@ -80,7 +80,7 @@ final class ConfigGeneratorTests: XCTestCase {
         func assert(config: XCBuildConfiguration?) {
             XCTAssertEqual(config?.buildSettings["Base"] as? String, "Base")
             XCTAssertEqual(config?.buildSettings["INFOPLIST_FILE"] as? String, "$(SRCROOT)/Info.plist")
-            XCTAssertEqual(config?.buildSettings["PRODUCT_BUNDLE_IDENTIFIER"] as? String, "com.test.bundle_id")
+            XCTAssertEqual(config?.buildSettings["PRODUCT_BUNDLE_IDENTIFIER"] as? String, "com.test.bundleId")
             XCTAssertEqual(config?.buildSettings["CODE_SIGN_ENTITLEMENTS"] as? String, "$(SRCROOT)/Test.entitlements")
             XCTAssertEqual(config?.buildSettings["SWIFT_VERSION"] as? String, Constants.swiftVersion)
 
@@ -116,8 +116,7 @@ final class ConfigGeneratorTests: XCTestCase {
         _ = try subject.generateProjectConfig(project: project,
                                               pbxproj: pbxproj,
                                               fileElements: fileElements,
-                                              configurations: ConfigurationList(configurations),
-                                              isRoot: true,
+                                              sharedConfigurations: ConfigurationList(configurations),
                                               options: options)
     }
 
@@ -132,7 +131,7 @@ final class ConfigGeneratorTests: XCTestCase {
         _ = try subject.generateManifestsConfig(pbxproj: pbxproj,
                                                 options: options,
                                                 resourceLocator: resourceLocator,
-                                                configurations: ConfigurationList(configurations))
+                                                sharedConfigurations: ConfigurationList(configurations))
     }
 
     private func generateTargetConfig(config _: BuildConfiguration) throws {
@@ -171,7 +170,7 @@ final class ConfigGeneratorTests: XCTestCase {
                                              pbxTarget: pbxTarget,
                                              pbxproj: pbxproj,
                                              fileElements: fileElements,
-                                             configurations: ConfigurationList(configurations),
+                                             sharedConfigurations: ConfigurationList(configurations),
                                              options: options,
                                              sourceRootPath: AbsolutePath("/"))
     }

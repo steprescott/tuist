@@ -7,7 +7,7 @@ protocol ProjectGenerating: AnyObject {
     func generate(project: Project,
                   options: GenerationOptions,
                   graph: Graphing,
-                  configurations: ConfigurationList,
+                  sharedConfigurations: ConfigurationList?,
                   sourceRootPath: AbsolutePath?) throws -> GeneratedProject
 }
 
@@ -62,7 +62,7 @@ final class ProjectGenerator: ProjectGenerating {
     func generate(project: Project,
                   options: GenerationOptions,
                   graph: Graphing,
-                  configurations: ConfigurationList,
+                  sharedConfigurations: ConfigurationList?,
                   sourceRootPath: AbsolutePath? = nil) throws -> GeneratedProject {
         printer.print("Generating project \(project.name)")
 
@@ -90,8 +90,7 @@ final class ProjectGenerator: ProjectGenerating {
         let configurationList = try configGenerator.generateProjectConfig(project: project,
                                                                           pbxproj: pbxproj,
                                                                           fileElements: fileElements,
-                                                                          configurations: configurations,
-                                                                          isRoot: graph.rootProject == project,
+                                                                          sharedConfigurations: sharedConfigurations,
                                                                           options: options)
 
         let pbxProject = try generatePbxproject(project: project,
@@ -107,7 +106,7 @@ final class ProjectGenerator: ProjectGenerating {
                                                 sourceRootPath: sourceRootPath,
                                                 options: options,
                                                 graph: graph,
-                                                configurations: configurations)
+                                                sharedConfigurations: sharedConfigurations)
 
         return try write(xcodeprojPath: xcodeprojPath,
                          nativeTargets: nativeTargets,
@@ -148,7 +147,7 @@ final class ProjectGenerator: ProjectGenerating {
                                      sourceRootPath: AbsolutePath,
                                      options: GenerationOptions,
                                      graph: Graphing,
-                                     configurations: ConfigurationList) throws -> [String: PBXNativeTarget] {
+                                     sharedConfigurations: ConfigurationList?) throws -> [String: PBXNativeTarget] {
         try targetGenerator.generateManifestsTarget(project: project,
                                                     pbxproj: pbxproj,
                                                     pbxProject: pbxProject,
@@ -156,7 +155,7 @@ final class ProjectGenerator: ProjectGenerating {
                                                     sourceRootPath: sourceRootPath,
                                                     options: options,
                                                     resourceLocator: resourceLocator,
-                                                    configurations: configurations)
+                                                    sharedConfigurations: sharedConfigurations)
 
         var nativeTargets: [String: PBXNativeTarget] = [:]
         try project.targets.forEach { target in
@@ -171,7 +170,7 @@ final class ProjectGenerator: ProjectGenerating {
                                                                   graph: graph,
                                                                   resourceLocator: resourceLocator,
                                                                   system: system,
-                                                                  configurations: configurations)
+                                                                  sharedConfigurations: sharedConfigurations)
             nativeTargets[target.name] = nativeTarget
         }
 

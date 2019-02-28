@@ -11,7 +11,7 @@ protocol TargetGenerating: AnyObject {
                                  sourceRootPath: AbsolutePath,
                                  options: GenerationOptions,
                                  resourceLocator: ResourceLocating,
-                                 configurations: ConfigurationList) throws
+                                 sharedConfigurations: ConfigurationList?) throws
 
     func generateTarget(target: Target,
                         pbxproj: PBXProj,
@@ -24,7 +24,7 @@ protocol TargetGenerating: AnyObject {
                         graph: Graphing,
                         resourceLocator: ResourceLocating,
                         system: Systeming,
-                        configurations: ConfigurationList) throws -> PBXNativeTarget
+                        sharedConfigurations: ConfigurationList?) throws -> PBXNativeTarget
 
     func generateTargetDependencies(path: AbsolutePath,
                                     targets: [Target],
@@ -64,7 +64,7 @@ final class TargetGenerator: TargetGenerating {
                                  sourceRootPath: AbsolutePath,
                                  options: GenerationOptions,
                                  resourceLocator: ResourceLocating = ResourceLocator(),
-                                 configurations: ConfigurationList) throws {
+                                 sharedConfigurations: ConfigurationList?) throws {
         /// Names
         let name = "\(project.name)-Manifest"
         let frameworkName = "\(name).framework"
@@ -86,7 +86,7 @@ final class TargetGenerator: TargetGenerating {
         let configurationList = try configGenerator.generateManifestsConfig(pbxproj: pbxproj,
                                                                             options: options,
                                                                             resourceLocator: resourceLocator,
-                                                                            configurations: configurations)
+                                                                            sharedConfigurations: sharedConfigurations)
 
         // Build phases
         let sourcesPhase = PBXSourcesBuildPhase()
@@ -118,7 +118,7 @@ final class TargetGenerator: TargetGenerating {
                         graph: Graphing,
                         resourceLocator: ResourceLocating = ResourceLocator(),
                         system: Systeming = System(),
-                        configurations: ConfigurationList) throws -> PBXNativeTarget {
+                        sharedConfigurations: ConfigurationList?) throws -> PBXNativeTarget {
         /// Products reference.
         let productFileReference = fileElements.products[target.productName]!
 
@@ -140,7 +140,7 @@ final class TargetGenerator: TargetGenerating {
                                                  pbxTarget: pbxTarget,
                                                  pbxproj: pbxproj,
                                                  fileElements: fileElements,
-                                                 configurations: configurations,
+                                                 sharedConfigurations: sharedConfigurations,
                                                  options: options,
                                                  sourceRootPath: sourceRootPath)
 

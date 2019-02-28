@@ -33,6 +33,16 @@ class Configuration: Equatable {
     }
 }
 
+extension Configuration {
+    static func debug(name: String = "Debug", settings: BuildSettings = [:], xcconfig: AbsolutePath? = nil) -> Configuration {
+        return Configuration(name: name, buildConfiguration: .debug, settings: settings, xcconfig: xcconfig)
+    }
+    
+    static func release(name: String = "Release", settings: BuildSettings = [:], xcconfig: AbsolutePath? = nil) -> Configuration {
+        return Configuration(name: name, buildConfiguration: .release, settings: settings, xcconfig: xcconfig)
+    }
+}
+
 class Settings: Equatable {
     // MARK: - Attributes
 
